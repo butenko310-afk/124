@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>АІ-методист | Колекція рудних гірських порід</title>
+    <style>
+        :root {
+            --primary: #334155;
+            --primary-light: #0284c7;
+            --bg: #f1f5f9;
+            --card: #ffffff;
+            --text: #0f172a;
+            --border: #cbd5e1;
+            --accent: #0f766e;
+        }
+        * { box-sizing: border-box; font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }
+        body { background-color: var(--bg); color: var(--text); margin: 0; padding: 0; line-height: 1.6; }
+        header { background: linear-gradient(135deg, #1e293b, #475569); color: white; padding: 20px 30px; box-shadow: 0 2px 10px rgba(0,0,0,0.12); }
+        header h1 { margin: 0; font-size: 22px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+        header p { margin: 5px 0 0; font-size: 14px; opacity: 0.9; }
+        .badge { background: rgba(255,255,255,0.18); padding: 3px 10px; border-radius: 12px; font-size: 12px; font-weight: 600; }
+        
+        .container { max-width: 1200px; margin: 25px auto; padding: 0 20px; display: grid; grid-template-columns: 350px 1fr; gap: 25px; }
+        @media (max-width: 900px) { .container { grid-template-columns: 1fr; } }
+
+        .panel { background: var(--card); border-radius: 10px; padding: 20px; border: 1px solid var(--border); box-shadow: 0 2px 5px rgba(0,0,0,0.03); }
+        .panel h2 { margin-top: 0; font-size: 18px; color: var(--primary); border-bottom: 2px solid #e2e8f0; padding-bottom: 10px; }
+
+        .form-group { margin-bottom: 16px; }
+        label { display: block; font-weight: 600; margin-bottom: 6px; font-size: 14px; }
+        select, button { width: 100%; padding: 10px 12px; border-radius: 6px; border: 1px solid var(--border); font-size: 14px; }
+        select:focus { outline: none; border-color: var(--primary-light); }
+
+        .btn-generate { background: var(--primary); color: white; font-weight: 600; border: none; cursor: pointer; transition: 0.2s; margin-top: 10px; font-size: 15px; }
+        .btn-generate:hover { background: #1e293b; }
+
+        .toolbar { display: flex; gap: 10px; margin-bottom: 15px; flex-wrap: wrap; }
+        .btn-export { background: var(--accent); color: white; border: none; width: auto; cursor: pointer; font-weight: 600; display: flex; align-items: center; gap: 6px; }
+        .btn-export:hover { background: #115e59; }
+        .btn-print { background: #475569; color: white; border: none; width: auto; cursor: pointer; font-weight: 600; }
+        .btn-print:hover { background: #334155; }
+        .btn-db { background: #e2e8f0; color: #1e293b; border: 1px solid #cbd5e1; width: auto; cursor: pointer; font-weight: 600; margin-left: auto; }
+
+        #output-area { background: white; border: 1px solid #cbd5e1; border-radius: 8px; padding: 30px; min-height: 500px; }
+        #output-area h3 { color: var(--primary); margin-top: 0; }
+        #output-area table { width: 100%; border-collapse: collapse; margin: 15px 0; }
+        #output-area th, #output-area td { border: 1px solid #94a3b8; padding: 8px 12px; text-align: left; font-size: 14px; }
+        #output-area th { background-color: #e2e8f0; }
+        .task-box { background: #f8fafc; border-left: 4px solid var(--primary-light); padding: 12px 15px; margin: 12px 0; }
+        .answer-key { background: #f0fdf4; border: 1px dashed #16a34a; padding: 15px; margin-top: 20px; border-radius: 6px; }
+
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 100; overflow-y: auto; }
+        .modal-content { background: white; max-width: 950px; margin: 40px auto; padding: 25px; border-radius: 10px; position: relative; }
+        .close-btn { position: absolute; right: 20px; top: 15px; font-size: 24px; cursor: pointer; font-weight: bold; }
+
+        @media print {
+            header, .panel:first-child, .toolbar { display: none !important; }
+            .container { display: block; margin: 0; padding: 0; }
+            #output-area { border: none; padding: 0; }
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>АІ-методист: Рудні гірські породи <span class="badge">Автономний режим • База: 20 зразків</span></h1>
+    <p>Генерація методичних матеріалів за 5 змістовними блоками навчальної колекції</p>
+</header>
+
+<div class="container">
+    <div class="panel">
+        <h2>Параметри генерації</h2>
+        
+        <div class="form-group">
+            <label for="block-select">1. Змістовний блок:</label>
+            <select id="block-select">
+                <option value="1">Блок 1. Залізні руди (чорна металургія)</option>
+                <option value="2">Блок 2. Мідні руди (кольорова металургія)</option>
+                <option value="3">Блок 3. Поліметалічні руди (свинець, цинк, супутники)</option>
+                <option value="4">Блок 4. Руди легких і рідкісних металів</option>
+                <option value="5">Блок 5. Рудні корисні копалини України</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="type-select">2. Тип методичного матеріалу:</label>
+            <select id="type-select">
+                <option value="demo">Сценарій фронтальної демонстрації зразків</option>
+                <option value="worksheet">Робочий аркуш для учнів (з завданнями)</option>
+                <option value="notes">Опорний конспект уроку</option>
+                <option value="test">Тестові питання з ключами відповідей</option>
+                <option value="oral">Питання для усного контролю знань</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="variant-select">3. Варіант компонування:</label>
+            <select id="variant-select">
+                <option value="standard">Базовий рівень (НУШ / 8–9 класи)</option>
+                <option value="advanced">Поглиблений рівень (профільний / геологія)</option>
+            </select>
+        </div>
+
+        <button type="button" class="btn-generate" onclick="generateMaterial()">⚡ Згенерувати матеріал</button>
+
+        <div style="margin-top: 25px; font-size: 13px; color: #475569; background: #f8fafc; padding: 12px; border-radius: 6px; border: 1px solid #cbd5e1;">
+            <strong>Гарантія достовірності:</strong><br>
+            Усі завдання, таблиці та ключі формуються виключно із закритої бази знань, що відповідає 20 підписаним зразкам у контейнерах або на планшетах.
+        </div>
+    </div>
+
+    <div class="panel">
+        <div class="toolbar">
+            <button type="button" class="btn-export" onclick="exportToWord()">📄 Експорт у Word (.doc)</button>
+            <button type="button" class="btn-print" onclick="window.print()">🖨️ Друк / Зберегти в PDF</button>
+            <button type="button" class="btn-db" onclick="toggleModal(true)">🗄️ Переглянути базу (20 зразків)</button>
+        </div>
+
+        <div id="output-area">
+            <div style="text-align: center; color: #64748b; padding: 80px 20px;">
+                <h3>Робоча область АІ-методиста готова</h3>
+                <p>Оберіть змістовний блок і тип документа зліва, після чого натисніть <strong>«Згенерувати матеріал»</strong>.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="db-modal" class="modal">
+    <div class="modal-content">
+        <span class="close-btn" onclick="toggleModal(false)">&times;</span>
+        <h2>Перевірена база знань колекції (20 зразків)</h2>
+        <div id="db-table-container"></div>
+    </div>
+</div>
+
+<script>
+const ROCKS_DB = new Array(
+    { id: 1, name: "Магнетитова руда (магнетит)", blocks: "1,5", metal: "Залізо (Fe, до 72%)", origin: "Магматичне та контактово-метасоматичне", features: "Чорний колір, металічний блиск, висока густина, сильні магнітні властивості (притягує магніт).", ukraine: "Криворізький та Кременчуцький залізорудні басейни", usage: "Найбагатша залізна руда для виплавки чавуну та сталі." },
+    { id: 2, name: "Гематитова руда (червоний залізняк)", blocks: "1,5", metal: "Залізо (Fe, до 70%)", origin: "Метаморфічне та гідротермальне", features: "Темно-сірий або червоно-бурий колір, залишає характерну вишнево-червону рису, немагнітний.", ukraine: "Криворізький басейн (Саксаганська смуга), Білозерський район", usage: "Основна сировина для чорної металургії, виробництво червоних пігментів." },
+    { id: 3, name: "Лімоніт (бурий залізняк)", blocks: "1,5", metal: "Залізо (Fe, 40–60%)", origin: "Осадове (морське та болотне)", features: "Бурий або охристо-жовтий колір, землиста або натічна будова, залишає жовто-буру рису.", ukraine: "Керченський залізорудний басейн, Полісся", usage: "Виплавка заліза (з попутним видобутком фосфору та ванадію), мінеральні фарби (вохра)." },
+    { id: 4, name: "Сидерит (залізний шпат)", blocks: "1", metal: "Залізо (Fe, до 48%)", origin: "Осадове та гідротермальне", features: "Жовтувато-сірий або бурий, скляний блиск, реагує з підігрітою соляною кислотою.", ukraine: "Донбас, Керченський басейн, Закарпаття", usage: "Якісна залізна руда (майже не містить шкідливих домішок сірки та фосфору)." },
+    { id: 5, name: "Залізистий кварцит (джеспіліт)", blocks: "1,5", metal: "Залізо (Fe, 30–45%)", origin: "Метаморфічне", features: "Тонкосмугаста текстура: чергування червоних/сірих шарів кварцу та темних рудних шарів.", ukraine: "Криворізький та Кременчуцький басейни (основні запаси)", usage: "Головна залізорудна сировина України (потребує збагачення на ГЗК)." },
+    { id: 6, name: "Халькопірит (мідний колчедан)", blocks: "2", metal: "Мідь (Cu, до 34,5%)", origin: "Гідротермальне та магматичне", features: "Латунно-жовтий колір із райдужною мінливістю, сильний металічний блиск, зеленувато-чорна риса.", ukraine: "Волинський міднорудний район, Закарпаття, Донбас", usage: "Головна промислова руда для виплавки чистої міді." },
+{ id: 7, name: "Малахітова руда", blocks: "2", metal: "Мідь (Cu, до 57%)", origin: "Екзогенне (зона окиснення мідних родовищ)", features: "Яскраво-зелений колір, натічна або концентрично-смугаста будова, бурхливо реагує з HCl.", ukraine: "Рудопрояви на Волині та Донбасі (Бахмутська улоговина)", usage: "Багата окиснена мідна руда, цінний виробний і ювелірний камінь." },
+{ id: 8, name: "Азурит (мідна лазур)", blocks: "2", metal: "Мідь (Cu, до 55%)", origin: "Екзогенне (зона окиснення)", features: "Насичений темно-синій (лазуровий) колір, часто утворює зростки з зеленим малахітом.", ukraine: "Донбас (мідисті пісковики), Закарпаття", usage: "Мідна руда, сировина для синьої мінеральної фарби." },
+{ id: 9, name: "Борніт (строката мідна руда)", blocks: "2", metal: "Мідь (Cu, до 63%)", origin: "Гідротермальне", features: "Свіжий злам мідно-червоний, на повітрі швидко вкривається синьо-фіолетовою плівкою.", ukraine: "Рудопрояви Українського щита та Закарпаття", usage: "Високоякісна мідна руда для електротехнічної промисловості." },
+{ id: 10, name: "Куприт (червона мідна руда)", blocks: "2", metal: "Мідь (Cu, до 88,8%)", origin: "Екзогенне (зона окиснення)", features: "Темно-червоний або свинцево-сірий колір, алмазний або напівметалічний блиск, висока густина.", ukraine: "Волинський рудний район", usage: "Найбагатша за вмістом металу мідна руда." },
+{ id: 11, name: "Галеніт (свинцевий блиск)", blocks: "3,5", metal: "Свинець (Pb, до 86,6%) + срібло", origin: "Гідротермальне", features: "Свинцево-сірий колір, сильний металічний блиск, спайність по кубу, дуже важкий (густина 7,5).", ukraine: "Закарпаття (Мужіївське та Берегівське родовища), Донбас", usage: "Головна руда для виплавки свинцю (акумулятори, захист від радіації) та попутного срібла." },
+{ id: 12, name: "Сфалерит (цинкова обманка)", blocks: "3,5", metal: "Цинк (Zn, до 67%) + кадмій, індій", origin: "Гідротермальне", features: "Бурий, жовтуватий або чорний колір, характерний алмазний блиск, світла риса.", ukraine: "Закарпаття (Берегівський рудний район), Донбас", usage: "Основна руда для отримання цинку (оцинкування сталі, латунь)." },
+{ id: 13, name: "Поліметалічна свинцево-цинкова руда", blocks: "3,5", metal: "Свинець (Pb), цинк (Zn), мідь (Cu), золото", origin: "Гідротермально-метасоматичне", features: "Зернистий агрегат із вкрапленнями галеніту, сфалериту, халькопіриту та піриту у кварцовій породі.", ukraine: "Закарпаття (Мужіївське родовище), Нагольний кряж (Донбас)", usage: "Комплексне вилучення кольорових і благородних металів." },
+{ id: 14, name: "Пірит (сірчаний колчедан)", blocks: "3", metal: "Залізо + сірка (супутник поліметалічних руд)", origin: "Гідротермальне та осадове", features: "Світло-латунно-жовтий колір, сильний металічний блиск, висока твердість (дряпає скло).", ukraine: "Донбас, Український щит, Закарпаття", usage: "Виробництво сірчаної кислоти; індикатор золотих і поліметалічних руд." },
+{ id: 15, name: "Боксит (алюмінієва руда)", blocks: "4", metal: "Алюміній (Al)", origin: "Екзогенне (кора вивітрювання)", features: "Червоно-бурий або сірий колір, глиноподібна або бобова (оолітова) будова, матовий злам.", ukraine: "Високопільське родовище (Дніпропетровська обл.)", usage: "Основна руда для виробництва глинозему та металевого алюмінію." },
+{ id: 16, name: "Ільменіт (титанова руда)", blocks: "4,5", metal: "Титан (Ti) + залізо", origin: "Магматичне та розсипне", features: "Чорний колір, напівметалічний блиск, висока густина, слабко магнітний.", ukraine: "Іршанське (Житомирська обл.) та Самотканське родовища", usage: "Виробництво металевого титану (авіація, космонавтика) та титанових білил." },
+{ id: 17, name: "Рутил (титанова руда)", blocks: "4,5", metal: "Титан (Ti, до 60%)", origin: "Магматичне, метаморфічне та розсипне", features: "Червоно-бурий або чорний колір, сильний алмазний блиск, висока твердість.", ukraine: "Малишевське (Самотканське) родовище (Дніпропетровська обл.)", usage: "Отримання надчистого титану, електроди для зварювання." },
+{ id: 18, name: "Сподумен (літієва руда)", blocks: "4,5", metal: "Літій (Li)", origin: "Пегматитове", features: "Світло-сірий, білуватий або зеленуватий колір, призматичні кристали, скляний блиск.", ukraine: "Полохівське та Шевченківське родовища (Український щит)", usage: "Стратегічна сировина для виробництва літій-іонних акумуляторів." },
+{ id: 19, name: "Каситерит (олов'яна руда)", blocks: "4", metal: "Олово (Sn, до 78,6%)", origin: "Гідротермально-грейзенове та розсипне", features: "Темно-бурий або чорний колір, алмазний блиск, дуже важкий (густина 7,0).", ukraine: "Пержанський рудний район (Житомирська обл.)", usage: "Виробництво олова, припоїв, бронзи, харчової жерсті." },
+{ id: 20, name: "Піролюзит (марганцева руда)", blocks: "4,5", metal: "Марганець (Mn, до 63%)", origin: "Осадове (морське)", features: "Чорний колір, землиста або натічна будова, бруднить руки (залишає чорний слід).", ukraine: "Нікопольський та Великотокмацький марганцеві басейни", usage: "Виплавка феромарганцю для виробництва міцних сортів сталі." }
+);
+function getBlockInfo(id) {
+if (id === 1) return { title: "Залізні руди — основа чорної металургії", goal: "Навчитися розпізнавати основні промислові типи залізних руд (магнетитову, гематитову, лімонітову, залізисті кварцити) за кольором, магнітністю та кольором риси." };
+if (id === 2) return { title: "Мідні руди та зони їх утворення", goal: "Дослідити первинні (сульфідні) та вторинні (окиснені) мідні руди, пояснити різницю між халькопіритом, малахітом та азуритом." };
+if (id === 3) return { title: "Поліметалічні руди (свинцево-цинкові та супутні мінерали)", goal: "Ознайомитися зі складом комплексних руд, навчитися визначати галеніт, сфалерит та пірит за густиною і блиском." };
+if (id === 4) return { title: "Руди легких, легуючих і рідкісних металів", goal: "Розглянути стратегічну мінеральну сировину сучасної промисловості: боксити (алюміній), ільменіт і рутил (титан), сподумен (літій), піролюзит (марганець)." };
+return { title: "Рудні корисні копалини України та їх господарське значення", goal: "Пов'язати найбільші рудні басейни України (Криворізький, Нікопольський, Іршанський, Закарпатський) з тектонічною будовою території." };
+}
+function generateMaterial() {
+const blockId = parseInt(document.getElementById('block-select').value, 10);
+const matType = document.getElementById('type-select').value;
+const level = document.getElementById('variant-select').value;
+const blockData = getBlockInfo(blockId);
+const samples = ROCKS_DB.filter(r => r.blocks.split(',').includes(String(blockId)));
+let html = <div style="border-bottom: 2px solid #334155; padding-bottom: 10px; margin-bottom: 20px;"> <span style="font-size: 12px; text-transform: uppercase; color: #64748b; font-weight: bold;"> Навчальна колекція «Рудні гірські породи» • ${level === 'standard' ? 'Базовий рівень (НУШ)' : 'Поглиблений рівень'} </span> <h2 style="margin: 5px 0; color: #334155;">Блок ${blockId}. ${blockData.title}</h2> </div>;
+if (matType === 'demo') {
+html += renderDemoScenario(blockId, blockData, samples, level);
+} else if (matType === 'worksheet') {
+html += renderWorksheet(blockId, blockData, samples, level);
+} else if (matType === 'notes') {
+html += renderNotes(blockId, blockData, samples, level);
+} else if (matType === 'test') {
+html += renderTest(blockId, blockData, samples, level);
+} else if (matType === 'oral') {
+html += renderOralQuestions(blockId, blockData, samples, level);
+}
+document.getElementById('output-area').innerHTML = html;
+}
+function renderDemoScenario(blockId, blockData, samples, level) {
+let rows = samples.map(s => `
+№ ${s.id}
+${s.name}${s.metal}${s.features}`).join('');
+return <h3>Сценарій проведення фронтальної демонстрації зразків</h3> <p><strong>Мета демонстрації:</strong> ${blockData.goal}</p> <p><strong>Необхідні зразки з колекції:</strong> контейнери/планшети ${samples.map(s =>№${s.id} (${s.name})`).join(', ')}.
+Етап 1. Вступний інструктаж та актуалізація (3–4 хв)
+
+Учитель демонструє підписані зразки колекції та пояснює: рудою називають гірську породу, з якої економічно вигідно видобувати метали. Зверніть увагу учнів на велику вагу (густину) та характерний блиск більшості рудних зразків.
+Етап 2. Покрокова демонстрація зразків (10–12 хв)
+
+Передавайте контейнери (планшети) по рядах або демонструйте через документ-камеру, акцентуючи увагу на діагностичних ознаках:
+${rows}
+
+Зразок	Назва руди	Корисний компонент	Діагностичні ознаки для спостереження
+
+Етап 3. Підсумкове узагальнення (3 хв)
+
+${level === 'advanced'
+? 'Запропонуйте учням пояснити, чому одні руди (наприклад, ільменіт або залізисті кварцити) потребують попереднього збагачення на гірничо-збагачувальних комбінатах (ГЗК) перед плавкою.'
+: 'Запитайте учнів, за якими зовнішніми ознаками (колір, блиск, вага, магнітність) можна відрізнити продемонстровані руди від нерудних порід.'}
+
+`;
+}
+function renderWorksheet(blockId, blockData, samples, level) {
+let tableRows = samples.slice(0, 4).map(s => `
+№ \({s.id}. \){s.name}
+`).join('');
+let matchPairs = samples.slice(0, 4).map((s, idx) => <li><strong>${idx + 1}.</strong> ${s.metal} &nbsp;&nbsp;→&nbsp;&nbsp; ________________________________________</li>).join('');
+const firstSample = samples.at(0);
+return <h3>Робочий аркуш учня / учениці</h3> <p><strong>Прізвище, ім'я:</strong> ___________________________________ &nbsp;&nbsp; <strong>Клас:</strong> _______ &nbsp;&nbsp; <strong>Дата:</strong> __________</p> <p><strong>Досліджувані зразки колекції:</strong> ${samples.map(s =>№${s.id}`).join(', ')}.
+Завдання 1. Металургійна спеціалізація (встановіть відповідність)
+
+Користуючись підписаними зразками колекції та супровідною інструкцією, запишіть назву рудної породи, з якої виплавляють зазначений метал:
+${matchPairs}
+Завдання 2. Практичне дослідження зразків у контейнерах / на планшеті
+
+Огляньте зразки та заповніть таблицю спостережень:
+${tableRows}
+
+№ та назва зразка	Колір та блиск	Оцінка густини (важкий / легкий)	Де застосовується метал
+
+Завдання 3. Проблемне запитання
+
+${blockId === 1
+? 'У колекції є два чорні зразки залізної руди: №1 (Магнетитова руда) та №2 (Гематитова руда). Запропонуйте два простих способи, як у кабінеті географії відрізнити їх один від одного.'
+: blockId === 2
+? 'Поясніть, чому халькопірит (№6) має металічний блиск і жовтий колір, а малахіт (№7) та азурит (№8) — яскраво-зелений і синій кольори без металічного блиску, хоча всі три зразки є мідними рудами.'
+: Поясніть, яке стратегічне значення для сучасної промисловості має видобуток зразка <strong>№${firstSample.id} (${firstSample.name})</strong>.}
+
+`;
+}
+function renderNotes(blockId, blockData, samples, level) {
+let cards = samples.map(s => <li style="margin-bottom: 10px;"> <strong>Зразок №${s.id}. ${s.name}</strong> — <em>сировина на: ${s.metal}</em><br> <em>Походження:</em> ${s.origin.toLowerCase()}.<br> <em>Діагностичні ознаки:</em> ${s.features}<br> <em>Родовища в Україні та застосування:</em> ${s.ukraine}. Використання: ${s.usage.toLowerCase()} </li>).join('');
+return `
+Опорний конспект для учнів
+Ключова ідея теми: ${blockData.goal}
+Головні терміни та поняття:
+
+Рудна гірська порода (руда) — природне мінеральне утворення, що містить метали або їх сполуки у кількостях, придатних для промислового видобутку.
+Поліметалічні руди — комплексні руди, з яких одночасно вилучають кілька металів (найчастіше свинець і цинк, а також мідь, срібло, золото).
+Збагачення руд — процес відокремлення корисних рудних мінералів від пустої породи на гірничо-збагачувальних комбінатах (ГЗК).
+
+Характеристика еталонних зразків колекції за темою:
+${cards}
+`;
+}
+function renderTest(blockId, blockData, samples, level) {
+const s1 = samples.at(0);
+const s2 = samples.at(1) || samples.at(0);
+const s3 = samples.at(-1);
+return <h3>Тестові завдання для перевірки знань (з ключами)</h3> <p><em>Тест складено виключно за матеріалами зразків колекції: ${samples.map(s =>№${s.id}`).join(', ')}.
+1. Який корисний компонент (метал) видобувають із породи «${s1.name}» (зразок №${s1.id})?
+А) Ртуть    Б) ${s1.metal}    В) Уран    Г) Вольфрам
+2. Яка діагностична ознака є характерною для зразка №${s2.id} (${s2.name})?
+А) ${s2.features}
+
+Б) Наявність відбитків давніх папоротей
+
+В) Пориста структура, що не тоне у воді
+
+Г) Солоний смак і повна розчинність у воді
+3. У якому басейні чи регіоні України зосереджені промислові поклади породи «${s3.name}» (зразок №${s3.id})?
+А) Львівсько-Волинський кам'яновугільний басейн    Б) ${s3.ukraine}    В) Причорноморська низовина    Г) Поліські болота
+4. Установіть відповідність між номером зразка у колекції та металом, який із нього виплавляють:
+1. Зразок №1 (Магнетитова руда)  —  А) Мідь
+
+2. Зразок №6 (Халькопірит)  —  Б) Залізо
+
+3. Зразок №16 (Ільменіт)  —  В) Титан
+🔑 КЛЮЧІ ВІДПОВІДЕЙ ДЛЯ ВЧИТЕЛЯ:
+
+1: Б (${s1.metal}) |
+2: А |
+3: Б (${s3.ukraine}) |
+4: 1–Б, 2–А, 3–В.
+
+`;
+}
+function renderOralQuestions(blockId, blockData, samples, level) {
+const sFirst = samples.at(0);
+const sLast = samples.at(-1);
+return `
+Запитання для усного контролю та фронтального опитування
+Тематичний блок: ${blockData.title}
+Блок А. Репродуктивні запитання (робота зі зразками в руках):
+
+Знайдіть у колекції зразок №${sFirst.id} (${sFirst.name}). Назвіть його діагностичні ознаки та метал, який із нього отримують.
+Де в Україні зосереджені родовища зразка №${sLast.id} (${sLast.name})?
+Поясніть господарське призначення зразків ${samples.map(s => №${s.id}).join(', ')}.
+
+Блок Б. Аналітичні та порівняльні запитання:
+
+Чим відрізняється рудна гірська порода від нерудної? Наведіть приклади.
+Порівняйте між собою зразки №${sFirst.id} (${sFirst.name}) та №${sLast.id} (${sLast.name}) за кольором, блиском та способом утворення.
+Чому родовища магматичних і метаморфічних руд (заліза, титану, літію) в Україні приурочені до Українського щита, а осадових (марганцю, бурого залізняку) — до його схилів та западин?
+${level === 'advanced' ? 'Поясніть різницю між простими та поліметалічними рудами, а також роль супутніх елементів (срібла, індію, кадмію) у рентабельності видобутку.' : ''}
+
+
+`;
+}
+function exportToWord() {
+const content = document.getElementById('output-area').innerHTML;
+if (content.includes('Робоча область АІ-методиста готова')) {
+alert('Спочатку згенеруйте матеріал, натиснувши кнопку «Згенерувати матеріал»!');
+return;
+}
+const header = "Методичний матеріалbody{font-family: 'Times New Roman', serif; font-size: 12pt;} table{border-collapse: collapse; width: 100%;} th, td{border: 1px solid black; padding: 6px;}";
+const footer = "";
+const sourceHTML = header + content + footer;
+const source = 'data:application/vnd.ms-word;charset=utf-8,' + encodeURIComponent(sourceHTML);
+const fileDownload = document.createElement("a");
+document.body.appendChild(fileDownload);
+fileDownload.href = source;
+fileDownload.download = 'Metodychnyi_material_Rudni_porody.doc';
+fileDownload.click();
+document.body.removeChild(fileDownload);
+}
+function toggleModal(show) {
+const modal = document.getElementById('db-modal');
+if (show) {
+let rows = ROCKS_DB.map(r => `
+№${r.id}
+${r.name}${r.metal}${r.features}${r.ukraine}).join(''); document.getElementById('db-table-container').innerHTML = 
+${rows}
+
+№
+	Назва руди	Метал	Ознаки	Україна
+
+`;
+modal.style.display = 'block';
+} else {
+modal.style.display = 'none';
+}
+}
+
+---
+
+### 3. Публікація на GitHub Pages
+1. На **[github.com](https://github.com)** натисніть **«+» → New repository**, введіть назву `ore-rocks`, оберіть **Public** і натисніть **Create repository**.
+2. Натисніть **creating a new file**, назвіть файл **`index.html`**, вставте код вище та натисніть **Commit changes**.
+3. Перейдіть у **Settings → Pages**, у пункті **Branch** оберіть **`main`** і натисніть **Save**.
+4. Постійне посилання для вчителів: `https://github.io`.
+
+<FollowUp>
+Яку колекцію готуємо наступною (наприклад, **мінерали**, **корисні копалини України**, **паливні корисні копалини** або **шкала твердості Мооса**)?
+</FollowUp>
